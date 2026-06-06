@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --bg-app: #f5f1e8;
+  --bg-surface: rgba(255, 252, 246, 0.86);
+  --bg-elevated: rgba(255, 255, 255, 0.92);
+  --border-soft: rgba(53, 71, 58, 0.14);
+  --text-strong: #1e2b23;
+  --text-body: #445248;
+  --text-muted: #6d7c70;
+  --accent: #1f6b52;
+  --accent-strong: #154837;
+  --accent-soft: #dcefe4;
+  --danger-soft: #f8dfdb;
+  --danger-strong: #8d3b2c;
+  --shadow-lg: 0 24px 70px rgba(39, 48, 40, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 199, 118, 0.35), transparent 30%),
+    radial-gradient(circle at top right, rgba(31, 107, 82, 0.16), transparent 26%),
+    linear-gradient(180deg, #f8f4ea 0%, #f2efe7 52%, #ecf3ee 100%);
+  color: var(--text-body);
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text-strong);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.glass-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+}
+
+.field-shell {
+  border: 1px solid rgba(68, 82, 72, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.field-shell:focus-within {
+  border-color: rgba(31, 107, 82, 0.55);
+  box-shadow: 0 0 0 4px rgba(31, 107, 82, 0.12);
+  transform: translateY(-1px);
+}
+
+.soft-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 107, 82, 0.35) transparent;
+}
+
+.soft-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.soft-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(31, 107, 82, 0.3);
+  border-radius: 999px;
+}
+
+.mesh-card {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(249, 246, 238, 0.82)),
+    radial-gradient(circle at top right, rgba(31, 107, 82, 0.14), transparent 45%);
+}
