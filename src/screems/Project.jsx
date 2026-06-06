@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from '../config/axios.js';
 import { initializeSocket, receiveMessage, sendMessage } from '../config/socket.js';
@@ -37,6 +37,7 @@ const Project = () => {
   const [isSubmittingUsers, setIsSubmittingUsers] = useState(false);
   const [removingUserId, setRemovingUserId] = useState(null);
   const [error, setError] = useState('');
+  const searchTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -69,21 +70,24 @@ const Project = () => {
     }
   }, [navigate, projectId, setUser]);
 
+  // Load chat messages from database
   useEffect(() => {
-    const loadUsers = async () => {
+    const loadChatMessages = async () => {
+      if (!projectId) return;
+      
       try {
-        setIsUsersLoading(true);
-        const res = await axios.get('/users/all');
-        setAllUsers(res.data.users || []);
+        const res = await axios.get(`/chat/${projectId}`, {
+          params: { limit: 50 }
+        });
+        setMessages(res.data.messages || []);
       } catch (err) {
-        console.error('Error fetching users:', err);
-      } finally {
-        setIsUsersLoading(false);
+        console.error('Error loading chat messages:', err);
+        // Don't show error for chat loading failures
       }
     };
 
-    loadUsers();
-  }, []);
+    loadChatMessages();
+  }, [projectId]);
 
   useEffect(() => {
     if (!projectId || !user) {
@@ -101,22 +105,51 @@ const Project = () => {
     };
   }, [projectId, user]);
 
-  const availableUsers = useMemo(() => {
-    const currentIds = new Set((projectData?.users || []).map((member) => String(member._id)));
-    return allUsers.filter((member) => !currentIds.has(String(member._id)));
-  }, [allUsers, projectData?.users]);
-
-  const filteredAvailableUsers = useMemo(() => {
-    const query = memberSearch.trim().toLowerCase();
-
-    if (!query) {
-      return availableUsers;
+  // Search for users when member search input changes
+  useEffect(() => {
+    if (!memberSearch.trim()) {
+      setAllUsers([]);
+      setIsUsersLoading(false);
+      return;
     }
 
-    return availableUsers.filter((member) =>
-      member.email?.toLowerCase().includes(query)
-    );
-  }, [availableUsers, memberSearch]);
+    // Clear the existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    setIsUsersLoading(true);
+
+    // Set a new timeout to debounce the search
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await axios.get('/users/search/query', {
+          params: {
+            query: memberSearch,
+            limit: 20
+          }
+        });
+
+        const currentIds = new Set((projectData?.users || []).map((member) => String(member._id)));
+        const availableSearchResults = (res.data.users || []).filter(
+          (member) => !currentIds.has(String(member._id))
+        );
+
+        setAllUsers(availableSearchResults);
+      } catch (err) {
+        console.error('Error searching users:', err);
+        setAllUsers([]);
+      } finally {
+        setIsUsersLoading(false);
+      }
+    }, 300); // Debounce for 300ms
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [memberSearch, projectData?.users]);
 
   const handleSendMessage = (event) => {
     event.preventDefault();
@@ -462,19 +495,19 @@ const Project = () => {
               ) : null}
 
               <div className="soft-scrollbar max-h-80 space-y-3 overflow-y-auto pr-1">
-                {isUsersLoading ? (
+                {memberSearch.trim() === '' ? (
                   <div className="rounded-2xl border border-[var(--border-soft)] bg-white/70 px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                    Loading workspace users...
+                    Start typing an email to search for collaborators.
                   </div>
-                ) : availableUsers.length === 0 ? (
+                ) : isUsersLoading ? (
                   <div className="rounded-2xl border border-[var(--border-soft)] bg-white/70 px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                    Everyone in the workspace is already in this project.
+                    Searching collaborators...
                   </div>
-                ) : filteredAvailableUsers.length === 0 ? (
+                ) : allUsers.length === 0 ? (
                   <div className="rounded-2xl border border-[var(--border-soft)] bg-white/70 px-4 py-6 text-center text-sm text-[var(--text-muted)]">
-                    No teammate matches that search yet.
+                    No collaborators found matching "{memberSearch}".
                   </div>
-                ) : filteredAvailableUsers.map((member) => (
+                ) : allUsers.map((member) => (
                   <label
                     key={member._id}
                     className="flex cursor-pointer items-center gap-4 rounded-[24px] border border-[var(--border-soft)] bg-white/72 p-4"
